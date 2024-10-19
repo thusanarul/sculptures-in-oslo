@@ -5,6 +5,26 @@ defmodule SculpturesInOslo do
   """
 
   @doc """
+  Get description of sculpture from page
+  """
+
+  def get_description_from_page(relative_link) do
+    url = "#{@baseUrl}#{relative_link}"
+
+    # TODO: figure out if i need multiple of this
+    req = Req.new(http_errors: :raise)
+
+    body =
+      Req.get!(req,
+        url: url
+      ).body
+
+    {:ok, document} = Floki.parse_document(body)
+
+    document |> Floki.find("div.detailed-text span") |> Floki.text()
+  end
+
+  @doc """
   Get links to visit from main page
 
   ## Examples
