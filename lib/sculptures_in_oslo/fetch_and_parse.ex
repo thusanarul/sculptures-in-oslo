@@ -10,11 +10,22 @@ defmodule SculpturesInOslo.FetchAndParse do
   end
 
   def init(:ok) do
-    first_page = get_links_from_page(1)
+    Enum.each(1..25, fn x ->
+      {
+        Process.send(self(), {:page, x}, [])
+      }
+    end)
 
-    IO.inspect(first_page)
+    {:ok, []}
+  end
 
-    {:ok, [first_page]}
+  def handle_info({:page, pagenr}, state) do
+    page = get_links_from_page(pagenr)
+
+    IO.puts("Fetched #{pagenr}")
+
+    new_state = page ++ state
+    {:noreply, new_state}
   end
 
   @doc """
