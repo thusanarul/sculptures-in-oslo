@@ -1,31 +1,20 @@
-defmodule SculpturesInOslo.FetchAndParse do
-  use GenServer
+defmodule SculpturesInOslo.FetchLinks do
+  use Task
   @baseUrl "https://okk.kunstsamlingen.no"
   @moduledoc """
   Documentation for `SculpturesInOslo`.
   """
+  alias SculpturesInOslo.LinksToVisit
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+  def start_link(arg) do
+    Task.start_link(__MODULE__, :run, [arg])
   end
 
-  def init(:ok) do
-    Enum.each(1..25, fn x ->
-      {
-        Process.send(self(), {:page, x}, [])
-      }
-    end)
+  def run(_arg) do
+    Task.async_stream(1..25, fn pagenr -> get_links_from_page(pagenr) end)
+    |> Stream.map(fn {:ok, links} -> LinksToVisit.add_links(links) end)
 
-    {:ok, []}
-  end
-
-  def handle_info({:page, pagenr}, state) do
-    page = get_links_from_page(pagenr)
-
-    IO.puts("Fetched #{pagenr}")
-
-    new_state = page ++ state
-    {:noreply, new_state}
+    IO.puts("Done fetching links!")
   end
 
   @doc """
