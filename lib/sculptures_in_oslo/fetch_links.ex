@@ -4,6 +4,7 @@ defmodule SculpturesInOslo.FetchLinks do
   @moduledoc """
   Documentation for `SculpturesInOslo`.
   """
+  alias SculpturesInOslo.FetchDescriptions
   alias SculpturesInOslo.LinksToVisit
 
   def start_link(arg) do
@@ -15,26 +16,8 @@ defmodule SculpturesInOslo.FetchLinks do
     |> Stream.map(fn {:ok, links} -> LinksToVisit.add_links(links) end)
 
     IO.puts("Done fetching links!")
-  end
 
-  @doc """
-  Get description of sculpture from page
-  """
-
-  def get_description_from_page(relative_link) do
-    url = "#{@baseUrl}#{relative_link}"
-
-    # TODO: figure out if i need multiple of this
-    req = Req.new(http_errors: :raise)
-
-    body =
-      Req.get!(req,
-        url: url
-      ).body
-
-    {:ok, document} = Floki.parse_document(body)
-
-    document |> Floki.find("div.detailed-text span") |> Floki.text()
+    spawn(&FetchDescriptions.run/0)
   end
 
   @doc """
