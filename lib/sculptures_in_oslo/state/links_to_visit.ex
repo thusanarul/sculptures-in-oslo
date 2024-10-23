@@ -1,4 +1,4 @@
-defmodule SculpturesInOslo.LinksToVisit do
+defmodule SculpturesInOslo.State.LinksToVisit do
   use Agent
 
   def start_link(initial_value) do
@@ -11,5 +11,9 @@ defmodule SculpturesInOslo.LinksToVisit do
 
   def add_links(links) do
     Agent.update(__MODULE__, &(links ++ &1))
+  end
+
+  def reset do
+    Agent.update(__MODULE__, fn _ -> [] end)
   end
 end

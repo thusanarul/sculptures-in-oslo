@@ -1,7 +1,7 @@
 defmodule SculpturesInOslo.FetchDescriptions do
-  alias SculpturesInOslo.LinksToVisit
+  alias SculpturesInOslo.State.Descriptions
+  alias SculpturesInOslo.State.LinksToVisit
   use Task
-  @baseUrl "https://okk.kunstsamlingen.no"
 
   def start_link(arg) do
     Task.start_link(__MODULE__, :run, [arg])
@@ -12,15 +12,16 @@ defmodule SculpturesInOslo.FetchDescriptions do
     links = LinksToVisit.get_links()
 
     descs =
-      Task.async_stream(links, fn link -> get_description_from_page(link.link) end)
+      Task.async_stream(links, fn link ->
+        %{title: link.title, text: get_description_from_page(link.url), link: link.url}
+      end)
+      |> Stream.map(fn {:ok, descs} -> Descriptions.add_description(descs) end)
       |> Enum.to_list()
 
     IO.inspect(descs)
   end
 
-  def get_description_from_page(relative_link) do
-    url = "#{@baseUrl}#{relative_link}"
-
+  def get_description_from_page(url) do
     # TODO: figure out if i need multiple of this
     req = Req.new(http_errors: :raise)
 
@@ -31,6 +32,7 @@ defmodule SculpturesInOslo.FetchDescriptions do
 
     {:ok, document} = Floki.parse_document(body)
 
-    document |> Floki.find("div.detailed-text span") |> Floki.text()
+    text = document |> Floki.find("div.detailed-text span") |> Floki.text()
+    text
   end
 end

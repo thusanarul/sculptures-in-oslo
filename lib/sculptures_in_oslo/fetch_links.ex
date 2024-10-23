@@ -1,19 +1,21 @@
 defmodule SculpturesInOslo.FetchLinks do
   use Task
-  @baseUrl "https://okk.kunstsamlingen.no"
+  @base_url "https://okk.kunstsamlingen.no"
   @moduledoc """
   Documentation for `SculpturesInOslo`.
   """
   alias SculpturesInOslo.FetchDescriptions
-  alias SculpturesInOslo.LinksToVisit
+  alias SculpturesInOslo.State.LinksToVisit
 
   def start_link(arg) do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
   def run(_arg) do
-    Task.async_stream(1..25, fn pagenr -> get_links_from_page(pagenr) end)
-    |> Stream.map(fn {:ok, links} -> LinksToVisit.add_links(links) end)
+    _links =
+      Task.async_stream(1..26, fn pagenr -> get_links_from_page(pagenr) end)
+      |> Stream.map(fn {:ok, links} -> LinksToVisit.add_links(links) end)
+      |> Enum.to_list()
 
     IO.puts("Done fetching links!")
 
@@ -43,13 +45,20 @@ defmodule SculpturesInOslo.FetchLinks do
       document
       |> Floki.find("div.title a.detailLink")
       |> Enum.map(fn x ->
-        {:title, Floki.attribute(x, "a", "title"), :link, Floki.attribute(x, "a", "href")}
+        %{
+          title: Floki.attribute(x, "a", "title"),
+          url: Floki.attribute(x, "a", "href") |> create_link
+        }
       end)
 
     links_to_visit
   end
 
+  defp create_link(relative_link) do
+    "#{@base_url}#{relative_link}"
+  end
+
   defp main_page(pagenr) do
-    "#{@baseUrl}/objects/images?filter=classification%3ASkulptur&page=#{pagenr}&sort=Relevance#filters"
+    "#{@base_url}/objects/images?filter=classification%3ASkulptur&page=#{pagenr}&sort=Relevance#filters"
   end
 end
