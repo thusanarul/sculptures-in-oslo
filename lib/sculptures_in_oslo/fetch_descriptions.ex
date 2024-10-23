@@ -32,7 +32,10 @@ defmodule SculpturesInOslo.FetchDescriptions do
 
     {:ok, document} = Floki.parse_document(body)
 
-    text = document |> Floki.find("div.detailed-text span") |> Floki.text()
-    text
+    node =
+      document
+      |> Floki.find("div.detailed-text, div.expanded-full-text")
+
+    node |> Floki.text()
   end
 end
