@@ -13,12 +13,13 @@ defmodule SculpturesInOslo.Prompt do
   end
 
   def init do
-    shell_cmd =
-      Enum.map(@ollama_ports, fn port ->
-        "OLLAMA_HOST=127.0.0.1:#{port} ollama serve"
-      end)
-      |> Enum.join(" & ")
+    # spawn(fn -> __MODULE__.open(hd(@ollama_server_ports)) end)
 
+    Enum.map(@ollama_server_ports, fn port ->
+      __MODULE__.open(port)
+    end)
+    |> Enum.to_list()
+  end
 
   def open(server_port \\ 11434) do
     IO.puts("Opening: #{server_port}")
