@@ -3,6 +3,7 @@ defmodule SculpturesInOslo.Prompt do
   alias SculpturesInOslo.Prompt.OllamaServers
 
   @prompt_base "Tell me where the statue is currently at based only on the provided text. Give me the answer in one line and only where it is located. The text: "
+  @model "llama3.2"
   @ollama_server_ports [11434, 11435, 11436, 11437]
   # @ollama_server_ports [11434]
   @wrapper_executable "./wrapper.sh"
@@ -38,6 +39,13 @@ defmodule SculpturesInOslo.Prompt do
 
     IO.puts("Started server: #{server_port}")
     port
+  end
+
+  def get_wherabouts(description) do
+    prompt = "#{@prompt_base}#{description}"
+
+    response = Rambo.run("ollama", ["run", @model, prompt])
+    response
   end
 end
 
