@@ -3,27 +3,24 @@ defmodule SculpturesInOslo.Prompt do
   alias SculpturesInOslo.Prompt.OllamaServers
 
   @prompt_base "Tell me where the statue is currently at based only on the provided text. Give me the answer in one line and only where it is located. The text: "
-  # @ollama_ports [11434, 11435, 11436, 11437]
-  @ollama_server_ports [11434]
+  @ollama_server_ports [11434, 11435, 11436, 11437]
+  # @ollama_server_ports [11434]
   @wrapper_executable "./wrapper.sh"
 
-  def start_link() do
+  def start_link do
     OllamaServers.start_link()
     Task.start_link(__MODULE__, :init, [])
   end
 
   def init do
-    # spawn(fn -> __MODULE__.open(hd(@ollama_server_ports)) end)
-
     Enum.map(@ollama_server_ports, fn port ->
-      __MODULE__.open(port)
+      spawn(fn -> open(port) end)
     end)
-    |> Enum.to_list()
+
+    {:ok, []}
   end
 
   def open(server_port \\ 11434) do
-    IO.puts("Opening: #{server_port}")
-
     port =
       Port.open({:spawn_executable, @wrapper_executable}, [
         :binary,
@@ -31,6 +28,10 @@ defmodule SculpturesInOslo.Prompt do
         {:env, [{~c"OLLAMA_HOST", ~c"127.0.0.1:#{server_port}"}]}
         # {:env, [{"OLLAMA_HOST", "127.0.0.1:#{server_port}"}]}
       ])
+
+    receive do
+      {_, {:data, msg}} -> IO.puts(msg)
+    end
 
     index = @ollama_server_ports |> Enum.find_index(fn p -> p == server_port end)
     OllamaServers.update_port_pid(index, port)
