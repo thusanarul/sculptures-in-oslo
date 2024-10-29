@@ -5,6 +5,7 @@ defmodule SculpturesInOslo.Application do
     children = [
       SculpturesInOslo.State.LinksToVisit,
       SculpturesInOslo.State.Descriptions,
+      SculpturesInOslo.Prompt,
       SculpturesInOslo.FetchLinks
     ]
 

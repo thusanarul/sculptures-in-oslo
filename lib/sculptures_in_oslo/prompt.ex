@@ -2,50 +2,42 @@ defmodule SculpturesInOslo.Prompt do
   use Task
   alias SculpturesInOslo.Prompt.OllamaServers
 
-  @prompt_base "Tell me where the statue is currently at based only on the provided text. Give me the answer in one line and only where it is located. The text: "
+  @prompt_base "Tell me where the statue is currently at based only on the provided text. Answer me with the current location only, preferably one word. The text: "
   @model "llama3.2"
-  @ollama_server_ports [11434, 11435, 11436, 11437]
-  # @ollama_server_ports [11434]
-  @wrapper_executable "./wrapper.sh"
+  # @ollama_server_ports [11434, 11435, 11436, 11437]
+  @ollama_server_ports [11434]
 
-  def start_link do
+  def start_link(arg \\ []) do
     OllamaServers.start_link()
-    Task.start_link(__MODULE__, :init, [])
+    Task.start_link(__MODULE__, :init, [arg])
   end
 
-  def init do
+  def init(_arg) do
     Enum.map(@ollama_server_ports, fn port ->
-      spawn(fn -> open(port) end)
+      open(port)
     end)
 
     {:ok, []}
   end
 
   def open(server_port \\ 11434) do
-    port =
-      Port.open({:spawn_executable, @wrapper_executable}, [
-        :binary,
-        {:args, ["ollama", "serve"]},
-        {:env, [{~c"OLLAMA_HOST", ~c"127.0.0.1:#{server_port}"}]}
-        # {:env, [{"OLLAMA_HOST", "127.0.0.1:#{server_port}"}]}
-      ])
+    env = %{"OLLAMA_HOST" => "127.0.0.1:#{server_port}"}
+    Rambo.run("ollama", ["serve"], env: env)
 
-    receive do
-      {_, {:data, msg}} -> IO.puts(msg)
-    end
-
-    index = @ollama_server_ports |> Enum.find_index(fn p -> p == server_port end)
-    OllamaServers.update_port_pid(index, port)
-
-    IO.puts("Started server: #{server_port}")
-    port
+    {:ok, "started server: #{server_port}"}
   end
 
-  def get_wherabouts(description) do
+  def get_wherabouts(description, server_port \\ 11434) do
+    index = @ollama_server_ports |> Enum.find_index(fn p -> p == server_port end)
+    OllamaServers.set_port_running(index, true)
+
     prompt = "#{@prompt_base}#{description}"
 
-    response = Rambo.run("ollama", ["run", @model, prompt])
-    response
+    env = %{"OLLAMA_HOST" => "127.0.0.1:#{server_port}"}
+    {:ok, response} = Rambo.run("ollama", ["run", @model, prompt], env: env)
+
+    OllamaServers.set_port_running(index, false)
+    response.out |> String.trim()
   end
 end
 
@@ -65,6 +57,13 @@ defmodule SculpturesInOslo.Prompt.OllamaServers do
     Agent.update(__MODULE__, fn state ->
       port_pids = state.port_pids |> List.replace_at(index, port_pid)
       %{state | port_pids: port_pids}
+    end)
+  end
+
+  def set_port_running(index, running) do
+    Agent.update(__MODULE__, fn state ->
+      running = state.running |> List.replace_at(index, running)
+      %{state | running: running}
     end)
   end
 
