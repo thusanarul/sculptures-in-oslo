@@ -11,14 +11,13 @@ defmodule SculpturesInOslo.FetchDescriptions do
     IO.puts("Starting descriptions fetcher:)")
     links = LinksToVisit.get_links()
 
-    descs =
-      Task.async_stream(links, fn link ->
-        %{title: link.title, text: get_description_from_page(link.url), link: link.url}
-      end)
-      |> Stream.map(fn {:ok, descs} -> Descriptions.add_description(descs) end)
-      |> Enum.to_list()
+    Task.async_stream(links, fn link ->
+      %{title: link.title, text: get_description_from_page(link.url), link: link.url}
+    end)
+    |> Stream.map(fn {:ok, descs} -> Descriptions.add_description(descs) end)
+    |> Enum.to_list()
 
-    IO.inspect(descs)
+    IO.puts("Done fetching descriptions!")
   end
 
   def get_description_from_page(url) do
