@@ -22,7 +22,7 @@ defmodule SculpturesInOslo.Prompt do
 
   def open(server_port \\ 11434) do
     env = %{"OLLAMA_HOST" => "127.0.0.1:#{server_port}"}
-    Rambo.run("ollama", ["serve"], env: env)
+    Rambo.run("ollama", ["serve"], env: env, log: false)
 
     {:ok, "started server: #{server_port}"}
   end
