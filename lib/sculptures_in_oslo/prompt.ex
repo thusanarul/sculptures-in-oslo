@@ -17,6 +17,8 @@ defmodule SculpturesInOslo.Prompt do
       open(port)
     end)
 
+    IO.puts("Opened ollama servers...")
+
     {:ok, []}
   end
 
