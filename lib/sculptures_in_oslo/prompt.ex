@@ -4,8 +4,8 @@ defmodule SculpturesInOslo.Prompt do
 
   @prompt_base "Tell me where the statue is currently at based only on the provided text. Answer me with the current location only, preferably one word. The text: "
   @model "llama3.2"
-  # @ollama_server_ports [11434, 11435, 11436, 11437]
-  @ollama_server_ports [11434]
+  @ollama_server_ports [11434, 11435, 11436, 11437]
+  # @ollama_server_ports [11434]
 
   def start_link(arg \\ []) do
     OllamaServers.start_link()
@@ -13,9 +13,8 @@ defmodule SculpturesInOslo.Prompt do
   end
 
   def init(_arg) do
-    Enum.map(@ollama_server_ports, fn port ->
-      open(port)
-    end)
+    Task.async_stream(@ollama_server_ports, fn port -> open(port) end, [{:timeout, :infinity}])
+    |> Stream.run()
 
     IO.puts("Opened ollama servers...")
 
@@ -23,6 +22,7 @@ defmodule SculpturesInOslo.Prompt do
   end
 
   def open(server_port \\ 11434) do
+    IO.puts("Starting ollama server: #{server_port}")
     env = %{"OLLAMA_HOST" => "127.0.0.1:#{server_port}"}
     Rambo.run("ollama", ["serve"], env: env, log: false)
 
