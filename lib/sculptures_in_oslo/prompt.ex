@@ -2,7 +2,7 @@ defmodule SculpturesInOslo.Prompt do
   use Task
   alias SculpturesInOslo.Prompt.OllamaServers
 
-  @prompt_base "Tell me where the statue is currently at based only on the provided text. Answer me with the current location only, preferably one word. The text: "
+  @prompt_base "Tell me where the statue is currently at based only on the provided text. Answer me with the current location only, preferably one word. If you can not find the current location, answer 'N/A'. The text: "
   @model "llama3.2"
   @ollama_server_ports [11434, 11435, 11436, 11437]
   # @ollama_server_ports [11434]
