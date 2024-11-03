@@ -8,14 +8,23 @@ defmodule SculpturesInOslo.FetchWhere do
   def fetch_all do
     descriptions = Descriptions.get_descriptions()
     length_chunk = descriptions |> length |> Kernel./(4) |> floor()
-    chunked = descriptions |> Enum.chunk_every(length_chunk)
+    chunked = descriptions |> Enum.chunk_every(length_chunk) |> Enum.with_index()
 
-    # Task.async_stream(chunked, fn chunk -> get_where(chunk) end) |> Task.await_many()
+    Task.async_stream(
+      chunked,
+      fn {chunk, index} ->
+        server_port = 11434 + index
+        IO.puts("Sending chunk to port: #{server_port}")
+        get_where(chunk, server_port)
+      end,
+      [{:timeout, :infinity}]
+    )
+    |> Stream.run()
 
-    get_where(descriptions)
+    # get_where(descriptions)
     all = Where.get_where()
 
-    {:ok, all}
+    {:ok, all |> length}
   end
 
   def get_where([head | tail], server_port \\ 11434) do
