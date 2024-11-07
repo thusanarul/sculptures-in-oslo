@@ -15,9 +15,18 @@ defmodule SculpturesInOslo.FetchWhere do
     Task.async_stream(
       chunked,
       fn {chunk, index} ->
-        server_port = 11434 + index
-        IO.puts("Sending chunk to port: #{server_port}")
-        get_where(chunk, server_port)
+        # TODO: Ensure there are only as many chunks as servers running another way
+        cond do
+          index <= 3 ->
+            server_port = 11434 + index
+            IO.puts("Sending chunk to port: #{server_port}")
+            get_where(chunk, server_port)
+
+          index > 3 ->
+            server_port = 11434 + 3
+            IO.puts("Sending chunk to port: #{server_port}")
+            get_where(chunk, server_port)
+        end
       end,
       [{:timeout, :infinity}]
     )
