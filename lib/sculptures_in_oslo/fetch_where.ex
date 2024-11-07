@@ -10,6 +10,8 @@ defmodule SculpturesInOslo.FetchWhere do
     length_chunk = descriptions |> length |> Kernel./(4) |> floor()
     chunked = descriptions |> Enum.chunk_every(length_chunk) |> Enum.with_index()
 
+    start = System.monotonic_time(:millisecond)
+
     Task.async_stream(
       chunked,
       fn {chunk, index} ->
@@ -20,6 +22,10 @@ defmodule SculpturesInOslo.FetchWhere do
       [{:timeout, :infinity}]
     )
     |> Stream.run()
+
+    diff = System.monotonic_time(:millisecond) - start
+
+    IO.puts("Took #{diff / 1000} seconds to fetch whereabouts:)")
 
     # get_where(descriptions)
     all = Where.get_where()
