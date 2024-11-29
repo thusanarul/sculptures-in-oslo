@@ -7,7 +7,7 @@ defmodule SculpturesInOslo.FetchWhere do
 
   def fetch_all do
     descriptions = Descriptions.get_descriptions()
-    length_chunk = descriptions |> length |> Kernel./(4) |> floor()
+    length_chunk = descriptions |> length |> Kernel./(4) |> ceil()
     chunked = descriptions |> Enum.chunk_every(length_chunk) |> Enum.with_index()
 
     start = System.monotonic_time(:millisecond)
