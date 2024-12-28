@@ -2,6 +2,7 @@ use std::env;
 
 use statue::{Statue, Statues};
 
+mod latlon;
 mod statue;
 
 fn main() -> eyre::Result<()> {
