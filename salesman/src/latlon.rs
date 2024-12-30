@@ -2,18 +2,20 @@ use std::f32::consts::PI;
 
 const R: f32 = 6371e3; // in metres
 
-struct LatLon {
+pub const GRONLAND_TBANE: (f32, f32) = (59.912733, 10.761390);
+
+pub struct LatLon {
     lat: f32,
     lon: f32,
 }
 
 impl LatLon {
-    fn new(lat: f32, lon: f32) -> Self {
+    pub fn new(lat: f32, lon: f32) -> Self {
         Self { lat, lon }
     }
 
     // Uses haversine formula to calculate distance in metres.
-    fn calculate_distance_to(&self, target: &LatLon) -> f32 {
+    pub fn calculate_distance_to(&self, target: &LatLon) -> i32 {
         let phi_1 = self.lat * (PI / 180.0);
         let phi_2 = target.lat * (PI / 180.0);
 
@@ -25,7 +27,7 @@ impl LatLon {
 
         let c = 2.0 * (a.sqrt().atan2((1.0 - a).sqrt()));
 
-        R * c // in metres
+        (R * c).floor() as i32 // in metres
     }
 }
 
@@ -40,6 +42,6 @@ mod tests {
 
         let distance = point_1.calculate_distance_to(&point_2);
 
-        assert_eq!(distance, 8239.428)
+        assert_eq!(distance, 8239)
     }
 }
