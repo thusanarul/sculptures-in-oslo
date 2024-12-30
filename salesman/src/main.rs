@@ -5,6 +5,7 @@ use statue::Statue;
 
 mod latlon;
 mod statue;
+mod tsp;
 
 fn main() -> eyre::Result<()> {
     let args: Vec<String> = env::args().collect();

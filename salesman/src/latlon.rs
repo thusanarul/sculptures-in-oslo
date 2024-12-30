@@ -1,5 +1,7 @@
 use std::f32::consts::PI;
 
+use crate::tsp::Edge;
+
 const R: f32 = 6371e3; // in metres
 
 pub const GRONLAND_TBANE: (f32, f32) = (59.912733, 10.761390);
@@ -28,6 +30,12 @@ impl LatLon {
         let c = 2.0 * (a.sqrt().atan2((1.0 - a).sqrt()));
 
         (R * c).floor() as i32 // in metres
+    }
+}
+
+impl Edge for LatLon {
+    fn weight(&self, node: &Self) -> i32 {
+        self.calculate_distance_to(node)
     }
 }
 
