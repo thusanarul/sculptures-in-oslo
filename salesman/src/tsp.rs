@@ -98,6 +98,46 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         self.path().clone()
     }
 
+    pub fn three_opt(&mut self) -> Vec<E> {
+        let n = self.path().len();
+
+        let mut cost = self.calculate_path_cost();
+        let mut found_improvement = true;
+
+        while found_improvement {
+            found_improvement = false;
+
+            for i in 0..(n - 1) {
+                let a = i;
+                let b = (i + 1) % n;
+                for j in (i + 1)..n {
+                    let c = j;
+                    let d = (j + 1) % n;
+                    for k in (j + 1)..n {
+                        let e = k;
+                        let f = (k + 1) % n;
+                        // Calculate delta change if connections are switched
+                        let ij = -self.dist(i, (i + 1) % n) - self.dist(j, (j + 1) % n)
+                            + self.dist(i, j)
+                            + self.dist(i + 1, (j + 1) % n);
+                        // Calculate delta change if connections are switched
+                        let ik = -self.dist(i, (i + 1) % n) - self.dist(k, (k + 1) % n)
+                            + self.dist(i, k)
+                            + self.dist(i + 1, (k + 1) % n);
+                        // Calculate delta change if connections are switched
+                        let jk = -self.dist(j, (j + 1) % n) - self.dist(k, (k + 1) % n)
+                            + self.dist(j, k)
+                            + self.dist(j + 1, (k + 1) % n);
+
+                        let length_delta = ij + ik + jk;
+                    }
+                }
+            }
+        }
+
+        todo!()
+    }
+
     // Nearest neighbour
     // Currently assumes first node is the starting point, but could start at random point.
     pub fn nn(&mut self) -> Vec<E> {
