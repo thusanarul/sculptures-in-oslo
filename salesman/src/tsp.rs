@@ -1,5 +1,51 @@
 use std::fmt::Debug;
 
+// NOTE: Used internally by three-opt to keep track of which edges to swap
+enum ThreeOpt {
+    CategoryOne {
+        i: usize,
+        j: usize,
+        delta: f32,
+    },
+    CategoryTwo {
+        first_swap: (usize, usize),
+        second_swap: (usize, usize),
+        delta: f32,
+    },
+    CategoryThree {
+        first_swap: (usize, usize),
+        second_swap: (usize, usize),
+        third_swap: (usize, usize),
+        delta: f32,
+    },
+}
+
+impl ThreeOpt {
+    fn category_one(i: usize, j: usize, delta: f32) -> Self {
+        Self::CategoryOne { i, j, delta }
+    }
+    fn category_two(first_swap: (usize, usize), second_swap: (usize, usize), delta: f32) -> Self {
+        Self::CategoryTwo {
+            first_swap,
+            second_swap,
+            delta,
+        }
+    }
+    fn category_three(
+        first_swap: (usize, usize),
+        second_swap: (usize, usize),
+        third_swap: (usize, usize),
+        delta: f32,
+    ) -> Self {
+        Self::CategoryThree {
+            first_swap,
+            second_swap,
+            third_swap,
+            delta,
+        }
+    }
+}
+
 pub trait Edge {
     fn weight(&self, node: &Self) -> f32;
 }
@@ -77,25 +123,103 @@ impl<E: Edge + Clone + Debug> TSP<E> {
             found_improvement = false;
 
             for i in 0..(n - 1) {
+                let a = i;
+                let b = (i + 1) % n;
                 for j in (i + 2)..n {
+                    let c = j;
+                    let d = (j + 1) % n;
                     // Calculate delta change if connections are switched
-                    let length_delta = -self.dist(i, (i + 1) % n) - self.dist(j, (j + 1) % n)
-                        + self.dist(i, j)
-                        + self.dist(i + 1, (j + 1) % n);
+                    let length_delta =
+                        -self.dist(a, b) - self.dist(c, d) + self.dist(a, c) + self.dist(b, d);
 
                     if length_delta < -0.001 {
                         self.swap_edges(i, j);
                         cost = cost + length_delta;
                         found_improvement = true;
-
-                        // println!("Swapping: {i} {j}");
-                        // println!("New cost: {cost}");
                     }
                 }
             }
         }
 
         self.path().clone()
+    }
+
+    // Choose any three edges and reconnect them in all the ways there are to combine them that do not produce cycles.
+    pub fn three_opt(&mut self) -> Vec<E> {
+        let n = self.path().len();
+
+        let mut cost = self.calculate_path_cost();
+        let mut found_improvement = true;
+
+        while found_improvement {
+            found_improvement = false;
+
+            for i in 0..(n - 1) {
+                let a = i;
+                let b = (i + 1) % n;
+                let ab = self.dist(a, b);
+                for j in (i + 1)..(n - 3) {
+                    let c = j;
+                    let d = (j + 1) % n;
+                    let cd = self.dist(c, d);
+                    for k in (j + 1)..(n - 1) {
+                        let e = k;
+                        let f = (k + 1) % n;
+                        let ef = self.dist(e, f);
+
+                        let ad = self.dist(a, d);
+                        let cf = self.dist(c, f);
+                        let ae = self.dist(a, e);
+                        let df = self.dist(d, f);
+                        let ac = self.dist(a, c);
+                        let bd = self.dist(b, d);
+                        let ce = self.dist(c, e);
+                        let be = self.dist(b, e);
+                        let bf = self.dist(b, f);
+
+                        // a x1 b x2 c y1 d y2 e z1 f z2
+
+                        // Identity aka. the cost of keeping it the same.
+                        let identity = ab + cd + ef;
+
+                        // One of the edges are connected like in the original path.
+                        // Essentially a 2-opt between the non-fixed edge.
+                        let delta_two_opt_1 = ThreeOpt::category_one(a, e, ae + cd + bf - ab - ef);
+                        let delta_two_opt_2 = ThreeOpt::category_one(c, d, ab + ce + df - cd - ef);
+                        let delta_two_opt_3 = ThreeOpt::category_one(a, b, ac + bd + ef - ab - cd);
+
+                        // The "true" three-opt cases
+                        // Can be swapped as two consecutive two-opts
+                        let delta_case_1 =
+                            ThreeOpt::category_two((d, e), (b, c), ac + be + df - identity);
+                        let delta_case_2 =
+                            ThreeOpt::category_two((a, f), (b, c), ae + bd + cf - identity);
+                        let delta_case_3 =
+                            ThreeOpt::category_two((a, f), (e, d), ad + ce + bf - identity);
+
+                        // Can be swapped as three consecutive two-opts
+                        let delta_case_4 = ThreeOpt::category_three(
+                            (a, f),
+                            (c, b),
+                            (e, d),
+                            ad + be + cf - identity,
+                        );
+
+                        let cases = [
+                            delta_two_opt_1,
+                            delta_two_opt_2,
+                            delta_two_opt_3,
+                            delta_case_1,
+                            delta_case_2,
+                            delta_case_3,
+                            delta_case_4,
+                        ];
+                    }
+                }
+            }
+        }
+
+        todo!()
     }
 
     // Nearest neighbour
