@@ -17,7 +17,7 @@ impl LatLon {
     }
 
     // Uses haversine formula to calculate distance in metres.
-    pub fn calculate_distance_to(&self, target: &LatLon) -> i32 {
+    pub fn calculate_distance_to(&self, target: &LatLon) -> f32 {
         let phi_1 = self.lat * (PI / 180.0);
         let phi_2 = target.lat * (PI / 180.0);
 
@@ -29,12 +29,12 @@ impl LatLon {
 
         let c = 2.0 * (a.sqrt().atan2((1.0 - a).sqrt()));
 
-        (R * c).floor() as i32 // in metres
+        (R * c).floor() // in metres
     }
 }
 
 impl Edge for LatLon {
-    fn weight(&self, node: &Self) -> i32 {
+    fn weight(&self, node: &Self) -> f32 {
         self.calculate_distance_to(node)
     }
 }
@@ -50,6 +50,6 @@ mod tests {
 
         let distance = point_1.calculate_distance_to(&point_2);
 
-        assert_eq!(distance, 8239)
+        assert_eq!(distance, 8239.0)
     }
 }

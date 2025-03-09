@@ -20,7 +20,6 @@ fn main() -> eyre::Result<()> {
         .filter(|val| val.has_pos())
         .collect();
 
-    println!("before sort:\n{:#?}", &statues[..3]);
     let start = LatLon::new(GRONLAND_TBANE.0, GRONLAND_TBANE.1);
 
     // Sort statues by proximity to start point for testing
@@ -30,16 +29,14 @@ fn main() -> eyre::Result<()> {
 
         let diff = a_pos.calculate_distance_to(&start) - b_pos.calculate_distance_to(&start);
 
-        if diff == 0 {
+        if diff == 0.0 {
             return Ordering::Equal;
-        } else if diff < 0 {
+        } else if diff < 0.0 {
             return Ordering::Less;
         } else {
             return Ordering::Greater;
         }
     });
-
-    println!("after sort:\n{:#?}", &statues[..3]);
 
     Ok(())
 }
