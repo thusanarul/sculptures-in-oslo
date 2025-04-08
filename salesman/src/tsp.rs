@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 // NOTE: Used internally by three-opt to keep track of which edges to swap
+#[derive(Debug)]
 enum ThreeOpt {
     CategoryOne {
         i: usize,
@@ -21,6 +22,23 @@ enum ThreeOpt {
 }
 
 impl ThreeOpt {
+    fn delta(&self) -> &f32 {
+        match self {
+            ThreeOpt::CategoryOne { i, j, delta } => delta,
+            ThreeOpt::CategoryTwo {
+                first_swap,
+                second_swap,
+                delta,
+            } => delta,
+            ThreeOpt::CategoryThree {
+                first_swap,
+                second_swap,
+                third_swap,
+                delta,
+            } => delta,
+        }
+    }
+
     fn category_one(i: usize, j: usize, delta: f32) -> Self {
         Self::CategoryOne { i, j, delta }
     }
@@ -106,6 +124,32 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         }
     }
 
+    fn three_opt_swap_edges(&mut self, case: &ThreeOpt) {
+        match case {
+            ThreeOpt::CategoryOne { i, j, delta } => {
+                self.swap_edges(i.clone(), j.clone());
+            }
+            ThreeOpt::CategoryTwo {
+                first_swap,
+                second_swap,
+                delta,
+            } => {
+                self.swap_edges(first_swap.0, first_swap.1);
+                self.swap_edges(second_swap.0, second_swap.1);
+            }
+            ThreeOpt::CategoryThree {
+                first_swap,
+                second_swap,
+                third_swap,
+                delta,
+            } => {
+                self.swap_edges(first_swap.0, first_swap.1);
+                self.swap_edges(second_swap.0, second_swap.1);
+                self.swap_edges(third_swap.0, third_swap.1);
+            }
+        }
+    }
+
     fn dist(&self, index_1: usize, index_2: usize) -> f32 {
         let path = &self.path;
         path[index_1].weight(&path[index_2])
@@ -133,7 +177,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
                         -self.dist(a, b) - self.dist(c, d) + self.dist(a, c) + self.dist(b, d);
 
                     if length_delta < -0.001 {
-                        self.swap_edges(i, j);
+                        self.swap_edges(a, c);
                         cost = cost + length_delta;
                         found_improvement = true;
                     }
@@ -149,77 +193,76 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         let n = self.path().len();
 
         let mut cost = self.calculate_path_cost();
-        let mut found_improvement = true;
 
+        let mut found_improvement = true;
         while found_improvement {
             found_improvement = false;
 
-            for i in 0..(n - 1) {
+            'outer: for i in 0..(n - 1) {
                 let a = i;
                 let b = (i + 1) % n;
-                let ab = self.dist(a, b);
-                for j in (i + 1)..(n - 3) {
+                for j in (i + 2)..n {
                     let c = j;
                     let d = (j + 1) % n;
-                    let cd = self.dist(c, d);
-                    for k in (j + 1)..(n - 1) {
+
+                    for k in (j + 2)..n {
                         let e = k;
                         let f = (k + 1) % n;
-                        let ef = self.dist(e, f);
 
-                        let ad = self.dist(a, d);
-                        let cf = self.dist(c, f);
-                        let ae = self.dist(a, e);
-                        let df = self.dist(d, f);
-                        let ac = self.dist(a, c);
-                        let bd = self.dist(b, d);
-                        let ce = self.dist(c, e);
-                        let be = self.dist(b, e);
-                        let bf = self.dist(b, f);
+                        // Gain: Length of added edges - length of removed edges
 
-                        // a x1 b x2 c y1 d y2 e z1 f z2
+                        // Two-opt cases
 
-                        // Identity aka. the cost of keeping it the same.
-                        let identity = ab + cd + ef;
-
-                        // One of the edges are connected like in the original path.
-                        // Essentially a 2-opt between the non-fixed edge.
-                        let delta_two_opt_1 = ThreeOpt::category_one(a, e, ae + cd + bf - ab - ef);
-                        let delta_two_opt_2 = ThreeOpt::category_one(c, d, ab + ce + df - cd - ef);
-                        let delta_two_opt_3 = ThreeOpt::category_one(a, b, ac + bd + ef - ab - cd);
-
-                        // The "true" three-opt cases
-                        // Can be swapped as two consecutive two-opts
-                        let delta_case_1 =
-                            ThreeOpt::category_two((d, e), (b, c), ac + be + df - identity);
-                        let delta_case_2 =
-                            ThreeOpt::category_two((a, f), (b, c), ae + bd + cf - identity);
-                        let delta_case_3 =
-                            ThreeOpt::category_two((a, f), (e, d), ad + ce + bf - identity);
-
-                        // Can be swapped as three consecutive two-opts
-                        let delta_case_4 = ThreeOpt::category_three(
-                            (a, f),
-                            (c, b),
-                            (e, d),
-                            ad + be + cf - identity,
+                        // fixed: a-b
+                        let delta_case_1 = ThreeOpt::category_one(
+                            c,
+                            e,
+                            self.dist(c, e) + self.dist(d, f) - self.dist(c, d) - self.dist(e, f),
                         );
 
-                        let cases = [
-                            delta_two_opt_1,
-                            delta_two_opt_2,
-                            delta_two_opt_3,
-                            delta_case_1,
-                            delta_case_2,
-                            delta_case_3,
-                            delta_case_4,
-                        ];
+                        // fixed: c-d
+                        let delta_case_2 = ThreeOpt::category_one(
+                            a,
+                            e,
+                            self.dist(a, e) + self.dist(b, f) - self.dist(a, b) - self.dist(e, f),
+                        );
+
+                        // fixed: e-f
+                        let delta_case_3 = ThreeOpt::category_one(
+                            a,
+                            c,
+                            -self.dist(a, b) - self.dist(c, d) + self.dist(a, c) + self.dist(b, d),
+                        );
+
+                        let cases = vec![delta_case_1, delta_case_2, delta_case_3];
+
+                        let mut most_gain: Option<ThreeOpt> = None;
+                        for case in cases {
+                            if case.delta() < &-0.001 {
+                                if let Some(current_best) = &most_gain {
+                                    if current_best.delta() > case.delta() {
+                                        most_gain = Some(case)
+                                    }
+                                } else {
+                                    most_gain = Some(case)
+                                }
+                            }
+                        }
+
+                        if let Some(best) = &most_gain {
+                            found_improvement = true;
+
+                            self.three_opt_swap_edges(best);
+                            cost = cost + best.delta();
+
+                            break 'outer;
+                        }
                     }
                 }
             }
         }
 
-        todo!()
+        self.path.clone()
     }
 
     // Nearest neighbour
@@ -386,11 +429,8 @@ mod tests {
 
     #[test]
     fn two_opt_wiki() -> eyre::Result<()> {
-        let WikiPaths {
-            path_1: initial,
-            path_2: expected,
-        } = wiki_nodes()?;
-        let mut tsp = TSP::new_and_initialize_path(initial);
+        let WikiPaths { path_1, path_2 } = wiki_nodes()?;
+        let mut tsp = TSP::new_and_initialize_path(path_2);
 
         let cost = tsp.calculate_path_cost();
         assert_eq!(cost.floor(), 55723.0);
@@ -401,7 +441,7 @@ mod tests {
 
         assert_eq!(cost.floor(), 8559.0);
 
-        let mut tsp2 = TSP::new_and_initialize_path(expected);
+        let mut tsp2 = TSP::new_and_initialize_path(path_1);
         let cost = tsp2.calculate_path_cost();
         assert_eq!(cost.floor(), 8586.0);
 
@@ -411,6 +451,34 @@ mod tests {
 
         assert_eq!(cost.floor(), 8559.0);
 
+        Ok(())
+    }
+
+    #[test]
+    fn three_opt_wiki() -> eyre::Result<()> {
+        let WikiPaths { path_1, path_2 } = wiki_nodes()?;
+        let mut tsp = TSP::new_and_initialize_path(path_2);
+
+        let prev_cost = tsp.calculate_path_cost();
+        // assert_eq!(prev_cost.floor(), 55723.0);
+
+        let _ = tsp.three_opt();
+
+        let cost = tsp.calculate_path_cost();
+
+        assert!(cost < prev_cost);
+
+        assert!(cost.floor() < 8559.0);
+
+        let mut tsp2 = TSP::new_and_initialize_path(path_1);
+        let cost = tsp2.calculate_path_cost();
+        assert_eq!(cost.floor(), 8586.0);
+
+        let _ = tsp2.three_opt();
+
+        let cost = tsp.calculate_path_cost();
+
+        assert!(cost.floor() < 8559.0);
         Ok(())
     }
 }
