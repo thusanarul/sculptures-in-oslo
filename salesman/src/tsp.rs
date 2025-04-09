@@ -234,13 +234,50 @@ impl<E: Edge + Clone + Debug> TSP<E> {
                             -self.dist(a, b) - self.dist(c, d) + self.dist(a, c) + self.dist(b, d),
                         );
 
-                        let cases = vec![delta_case_1, delta_case_2, delta_case_3];
+                        // Three-opt cases
+
+                        let common = -self.dist(a, b) - self.dist(c, d) - self.dist(e, f);
+
+                        let delta_case_4 = ThreeOpt::category_two(
+                            (a, d),
+                            (b, e),
+                            -common + self.dist(a, d) + self.dist(e, b) + self.dist(f, c),
+                        );
+
+                        let delta_case_5 = ThreeOpt::category_two(
+                            (a, e),
+                            (c, e),
+                            -common + self.dist(a, e) + self.dist(d, b) + self.dist(c, f),
+                        );
+
+                        let delta_case_6 = ThreeOpt::category_two(
+                            (a, c),
+                            (c, e),
+                            -common + self.dist(a, c) + self.dist(b, e) + self.dist(d, f),
+                        );
+
+                        let delta_case_7 = ThreeOpt::category_three(
+                            (a, d),
+                            (b, e),
+                            (c, e),
+                            -common + self.dist(a, d) + self.dist(e, c) + self.dist(b, f),
+                        );
+
+                        let cases = vec![
+                            delta_case_1,
+                            delta_case_2,
+                            delta_case_3,
+                            delta_case_4,
+                            delta_case_5,
+                            delta_case_6,
+                            delta_case_7,
+                        ];
 
                         let mut most_gain: Option<ThreeOpt> = None;
                         for case in cases {
                             if case.delta() < &-0.001 {
                                 if let Some(current_best) = &most_gain {
-                                    if current_best.delta() > case.delta() {
+                                    if case.delta() < current_best.delta() {
                                         most_gain = Some(case)
                                     }
                                 } else {
@@ -489,6 +526,8 @@ mod tests {
 
         assert!(cost.floor() < 8559.0);
 
+        println!("Cost: {cost}");
+
         let mut tsp2 = TSP::new_and_initialize_path(path_1);
         let cost = tsp2.calculate_path_cost();
         assert_eq!(cost.floor(), 8586.0);
@@ -497,6 +536,7 @@ mod tests {
 
         let cost = tsp.calculate_path_cost();
 
+        println!("Cost: {cost}");
         assert!(cost.floor() < 8559.0);
         Ok(())
     }
