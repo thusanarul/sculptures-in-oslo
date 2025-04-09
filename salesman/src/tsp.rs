@@ -322,6 +322,25 @@ mod tests {
     use std::fs;
 
     #[derive(Clone, Debug, PartialEq)]
+    struct OneDPoint {
+        x: f32,
+    }
+
+    impl OneDPoint {
+        fn new(x: f32) -> Self {
+            Self { x }
+        }
+    }
+
+    impl Edge for OneDPoint {
+        fn weight(&self, node: &Self) -> f32 {
+            let diffx = self.x - node.x;
+
+            (diffx * diffx).sqrt()
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
     struct Point {
         x: f32,
         y: f32,
@@ -479,6 +498,46 @@ mod tests {
         let cost = tsp.calculate_path_cost();
 
         assert!(cost.floor() < 8559.0);
+        Ok(())
+    }
+
+    #[test]
+    fn swap_edges() -> eyre::Result<()> {
+        let path = vec![
+            OneDPoint::new(1.0),
+            OneDPoint::new(2.0),
+            OneDPoint::new(3.0),
+            OneDPoint::new(4.0),
+            OneDPoint::new(5.0),
+            OneDPoint::new(6.0),
+            OneDPoint::new(7.0),
+            OneDPoint::new(8.0),
+        ];
+
+        let mut tsp = TSP::new_and_initialize_path(path);
+        tsp.swap_edges(0, 3);
+        println!("path: {:#?}", tsp.path());
+        tsp.swap_edges(1, 4);
+        println!("path: {:#?}", tsp.path());
+        tsp.swap_edges(2, 4);
+
+        println!("path: {:#?}", tsp.path());
+        // tsp.swap_edges(1, 4);
+
+        // assert_eq!(
+        //     &vec![
+        //         OneDPoint::new(1.0),
+        //         OneDPoint::new(3.0),
+        //         OneDPoint::new(2.0),
+        //         OneDPoint::new(4.0),
+        //         OneDPoint::new(5.0),
+        //         OneDPoint::new(6.0),
+        //         OneDPoint::new(7.0),
+        //         OneDPoint::new(8.0),
+        //     ],
+        //     tsp.path()
+        // );
+
         Ok(())
     }
 }
