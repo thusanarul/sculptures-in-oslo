@@ -1,7 +1,8 @@
 use std::{cmp::Ordering, env};
 
 use latlon::{LatLon, GRONLAND_TBANE};
-use statue::Statue;
+use statue::{MaybeStatue, Statue};
+use tsp::TSP;
 
 mod latlon;
 mod statue;
@@ -17,15 +18,15 @@ fn main() -> eyre::Result<()> {
 
     let mut statues: Vec<Statue> = get_from_path(path)?
         .into_iter()
-        .filter(|val| val.has_pos())
+        .filter_map(|val| val.try_into().ok())
         .collect();
 
     let start = LatLon::new(GRONLAND_TBANE.0, GRONLAND_TBANE.1);
 
-    // Sort statues by proximity to start point for testing
+    // Sort statues by proximity to start point for testing to something close to home<3
     statues.sort_by(|a: &Statue, b: &Statue| -> Ordering {
-        let a_pos: LatLon = a.try_into().unwrap();
-        let b_pos: LatLon = b.try_into().unwrap();
+        let a_pos: LatLon = a.latlon();
+        let b_pos: LatLon = b.latlon();
 
         let diff = a_pos.calculate_distance_to(&start) - b_pos.calculate_distance_to(&start);
 
@@ -38,15 +39,22 @@ fn main() -> eyre::Result<()> {
         }
     });
 
+    let mut tsp = TSP::new(statues[0..10].to_vec());
+    tsp.nn();
+    tsp.three_opt();
+
+    println!("Path:\n{:#?}", tsp.path());
+    println!("Total distance: {}", tsp.calculate_path_cost());
+
     Ok(())
 }
 
-fn get_from_path(path: String) -> eyre::Result<Vec<Statue>> {
+fn get_from_path(path: String) -> eyre::Result<Vec<MaybeStatue>> {
     let mut rdr = csv::Reader::from_path(path)?;
     let mut output = vec![];
 
     for record in rdr.deserialize() {
-        let record: Statue = record?;
+        let record: MaybeStatue = record?;
         output.push(record);
     }
 

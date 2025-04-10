@@ -68,7 +68,7 @@ pub trait Edge {
     fn weight(&self, node: &Self) -> f32;
 }
 
-struct TSP<E: Edge + Clone> {
+pub struct TSP<E: Edge + Clone> {
     nodes: Vec<E>,
     path: Vec<E>,
 }
@@ -88,7 +88,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         }
     }
 
-    fn path(&self) -> &Vec<E> {
+    pub fn path(&self) -> &Vec<E> {
         &self.path
     }
 
