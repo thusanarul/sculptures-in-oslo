@@ -215,14 +215,14 @@ impl<E: Edge + Clone + Debug> TSP<E> {
                         let delta_case_1 = ThreeOpt::category_one(
                             c,
                             e,
-                            self.dist(c, e) + self.dist(d, f) - self.dist(c, d) - self.dist(e, f),
+                            -self.dist(c, d) - self.dist(e, f) + self.dist(c, e) + self.dist(d, f),
                         );
 
                         // fixed: c-d
                         let delta_case_2 = ThreeOpt::category_one(
                             a,
                             e,
-                            self.dist(a, e) + self.dist(b, f) - self.dist(a, b) - self.dist(e, f),
+                            -self.dist(a, b) - self.dist(e, f) + self.dist(a, e) + self.dist(b, f),
                         );
 
                         // fixed: e-f
