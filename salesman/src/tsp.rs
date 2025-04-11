@@ -239,26 +239,26 @@ impl<E: Edge + Clone + Debug> TSP<E> {
                         let delta_case_4 = ThreeOpt::category_two(
                             (a, d),
                             (b, e),
-                            -common + self.dist(a, d) + self.dist(e, b) + self.dist(f, c),
+                            common + self.dist(a, d) + self.dist(e, b) + self.dist(f, c),
                         );
 
                         let delta_case_5 = ThreeOpt::category_two(
                             (a, e),
                             (c, e),
-                            -common + self.dist(a, e) + self.dist(d, b) + self.dist(c, f),
+                            common + self.dist(a, e) + self.dist(d, b) + self.dist(c, f),
                         );
 
                         let delta_case_6 = ThreeOpt::category_two(
                             (a, c),
                             (c, e),
-                            -common + self.dist(a, c) + self.dist(b, e) + self.dist(d, f),
+                            common + self.dist(a, c) + self.dist(b, e) + self.dist(d, f),
                         );
 
                         let delta_case_7 = ThreeOpt::category_three(
                             (a, d),
                             (b, e),
                             (c, e),
-                            -common + self.dist(a, d) + self.dist(e, c) + self.dist(b, f),
+                            common + self.dist(a, d) + self.dist(e, c) + self.dist(b, f),
                         );
 
                         let cases = vec![
@@ -511,7 +511,8 @@ mod tests {
     #[test]
     fn three_opt_wiki() -> eyre::Result<()> {
         let WikiPaths { path_1, path_2 } = wiki_nodes()?;
-        let mut tsp = TSP::new_and_initialize_path(path_2);
+        let mut tsp = TSP::new(path_2);
+        tsp.nn();
 
         let prev_cost = tsp.calculate_path_cost();
         // assert_eq!(prev_cost.floor(), 55723.0);
@@ -526,13 +527,15 @@ mod tests {
 
         println!("Cost: {cost}");
 
-        let mut tsp2 = TSP::new_and_initialize_path(path_1);
-        let cost = tsp2.calculate_path_cost();
-        assert_eq!(cost.floor(), 8586.0);
+        let mut tsp2 = TSP::new(path_1);
+        tsp2.nn();
+
+        let prev_cost = tsp2.calculate_path_cost();
 
         let _ = tsp2.three_opt();
 
-        let cost = tsp.calculate_path_cost();
+        let cost = tsp2.calculate_path_cost();
+        assert!(cost < prev_cost);
 
         println!("Cost: {cost}");
         assert!(cost.floor() < 8559.0);
