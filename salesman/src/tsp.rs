@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use crate::edge::Edge;
+
 // NOTE: Used internally by three-opt to keep track of which edges to swap
 #[derive(Debug)]
 enum ThreeOpt {
@@ -62,10 +64,6 @@ impl ThreeOpt {
             delta,
         }
     }
-}
-
-pub trait Edge {
-    fn weight(&self, node: &Self) -> f32;
 }
 
 pub struct TSP<E: Edge + Clone> {

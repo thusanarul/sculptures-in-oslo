@@ -1,7 +1,7 @@
 use eyre::eyre;
 use serde::Deserialize;
 
-use crate::{latlon::LatLon, tsp::Edge};
+use crate::{edge::Edge, latlon::LatLon};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct MaybeStatue {

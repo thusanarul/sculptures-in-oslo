@@ -1,11 +1,42 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, sync::LazyLock};
 
-use crate::tsp::Edge;
+use crate::edge::Edge;
 
 const R: f32 = 6371e3; // in metres
 
-pub const GRONLAND_TBANE: (f32, f32) = (59.912733, 10.761390);
+pub const GRONLAND_TBANE: LazyLock<StartingPoint> = LazyLock::new(|| {
+    StartingPoint::new(
+        LatLon::new(59.912733, 10.761390),
+        "Grønland T-bane".to_string(),
+    )
+});
 
+pub const KAMPEN: LazyLock<StartingPoint> =
+    LazyLock::new(|| StartingPoint::new(LatLon::new(59.9133408, 10.7745239), "Kampen".to_string()));
+
+#[derive(Debug, Clone)]
+pub struct StartingPoint {
+    latlon: LatLon,
+    r#where: String,
+}
+
+impl StartingPoint {
+    fn new(latlon: LatLon, r#where: String) -> Self {
+        Self { latlon, r#where }
+    }
+
+    pub fn latlon(&self) -> &LatLon {
+        &self.latlon
+    }
+}
+
+impl Edge for StartingPoint {
+    fn weight(&self, node: &Self) -> f32 {
+        self.latlon.weight(&node.latlon)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct LatLon {
     lat: f32,
     lon: f32,

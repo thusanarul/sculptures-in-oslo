@@ -1,9 +1,11 @@
-use std::{cmp::Ordering, env};
+use std::{cmp::Ordering, env, ops::Deref};
 
-use latlon::{LatLon, GRONLAND_TBANE};
+use edge::NodeLatLon;
+use latlon::{LatLon, GRONLAND_TBANE, KAMPEN};
 use statue::{MaybeStatue, Statue};
 use tsp::TSP;
 
+mod edge;
 mod latlon;
 mod statue;
 mod tsp;
@@ -21,14 +23,15 @@ fn main() -> eyre::Result<()> {
         .filter_map(|val| val.try_into().ok())
         .collect();
 
-    let start = LatLon::new(GRONLAND_TBANE.0, GRONLAND_TBANE.1);
+    let start = GRONLAND_TBANE.deref().clone();
 
     // Sort statues by proximity to start point for testing to something close to home<3
     statues.sort_by(|a: &Statue, b: &Statue| -> Ordering {
         let a_pos: LatLon = a.latlon();
         let b_pos: LatLon = b.latlon();
 
-        let diff = a_pos.calculate_distance_to(&start) - b_pos.calculate_distance_to(&start);
+        let diff = a_pos.calculate_distance_to(start.latlon())
+            - b_pos.calculate_distance_to(start.latlon());
 
         if diff == 0.0 {
             return Ordering::Equal;
@@ -39,7 +42,17 @@ fn main() -> eyre::Result<()> {
         }
     });
 
-    let mut tsp = TSP::new(statues[0..10].to_vec());
+    let mut path: Vec<NodeLatLon> = vec![NodeLatLon::StartingPoint(start)];
+
+    path.append(
+        &mut statues[0..25]
+            .iter()
+            .map(|s| NodeLatLon::Statue(s.clone()))
+            .collect::<Vec<NodeLatLon>>(),
+    );
+
+    let mut tsp = TSP::new(path);
+    // let mut tsp = TSP::new_and_initialize_path(statues[0..20].to_vec());
     tsp.nn();
     tsp.three_opt();
 
