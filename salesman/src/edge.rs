@@ -3,6 +3,7 @@ use crate::{
     statue::Statue,
 };
 
+// NOTE: Implementing this trait gives a way to calculate weight of edge between two nodes.
 pub trait Edge {
     fn weight(&self, node: &Self) -> f32;
 }
