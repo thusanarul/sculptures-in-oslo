@@ -2,11 +2,13 @@ use std::{cmp::Ordering, env, ops::Deref};
 
 use edge::NodeLatLon;
 use latlon::{LatLon, GRONLAND_TBANE, KAMPEN};
+use mst::MST;
 use statue::{MaybeStatue, Statue};
 use tsp::TSP;
 
 mod edge;
 mod latlon;
+mod mst;
 mod statue;
 mod tsp;
 
@@ -51,13 +53,24 @@ fn main() -> eyre::Result<()> {
             .collect::<Vec<NodeLatLon>>(),
     );
 
+    let mut mst = MST::new(path.clone());
+    mst.solve();
+    let mst_lower_bound = mst.calculate_cost();
+
     let mut tsp = TSP::new(path);
     // let mut tsp = TSP::new_and_initialize_path(statues[0..20].to_vec());
     tsp.nn();
     tsp.three_opt();
 
     println!("Path:\n{:#?}", tsp.path());
-    println!("Total distance: {}", tsp.calculate_path_cost());
+    let tsp_cost = tsp.calculate_path_cost();
+    println!("Total distance: {}", tsp_cost);
+
+    println!("MST lower bound: {}", mst_lower_bound);
+    println!(
+        "Calculated distance to lower bound ratio: {}",
+        tsp_cost / mst_lower_bound
+    );
 
     Ok(())
 }
