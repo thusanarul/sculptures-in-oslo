@@ -11,6 +11,7 @@ mod latlon;
 mod mst;
 mod statue;
 mod tsp;
+mod tsp_ext;
 
 fn main() -> eyre::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -57,14 +58,29 @@ fn main() -> eyre::Result<()> {
     mst.solve();
     let mst_lower_bound = mst.calculate_cost();
 
-    let mut tsp = TSP::new(path);
+    let mut tsp = TSP::new(path.clone());
     // let mut tsp = TSP::new_and_initialize_path(statues[0..20].to_vec());
     tsp.nn();
     tsp.three_opt();
 
-    println!("Path:\n{:#?}", tsp.path());
+    // println!("Path:\n{:#?}", tsp.path());
     let tsp_cost = tsp.calculate_path_cost();
-    println!("Total distance: {}", tsp_cost);
+    println!("Total distance three-opt: {}", tsp_cost);
+
+    println!("MST lower bound: {}", mst_lower_bound);
+    println!(
+        "Calculated distance to lower bound ratio: {}",
+        tsp_cost / mst_lower_bound
+    );
+
+    let mut tsp = TSP::new(path);
+
+    tsp.nn();
+    tsp.three_opt_sm();
+
+    // println!("Path:\n{:#?}", tsp.path());
+    let tsp_cost = tsp.calculate_path_cost();
+    println!("Total distance sm: {}", tsp_cost);
 
     println!("MST lower bound: {}", mst_lower_bound);
     println!(

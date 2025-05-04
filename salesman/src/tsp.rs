@@ -1,70 +1,6 @@
 use std::fmt::Debug;
 
-use crate::edge::Edge;
-
-// NOTE: Used internally by three-opt to keep track of which edges to swap
-#[derive(Debug)]
-enum ThreeOpt {
-    CategoryOne {
-        i: usize,
-        j: usize,
-        delta: f32,
-    },
-    CategoryTwo {
-        first_swap: (usize, usize),
-        second_swap: (usize, usize),
-        delta: f32,
-    },
-    CategoryThree {
-        first_swap: (usize, usize),
-        second_swap: (usize, usize),
-        third_swap: (usize, usize),
-        delta: f32,
-    },
-}
-
-impl ThreeOpt {
-    fn delta(&self) -> &f32 {
-        match self {
-            ThreeOpt::CategoryOne { i, j, delta } => delta,
-            ThreeOpt::CategoryTwo {
-                first_swap,
-                second_swap,
-                delta,
-            } => delta,
-            ThreeOpt::CategoryThree {
-                first_swap,
-                second_swap,
-                third_swap,
-                delta,
-            } => delta,
-        }
-    }
-
-    fn category_one(i: usize, j: usize, delta: f32) -> Self {
-        Self::CategoryOne { i, j, delta }
-    }
-    fn category_two(first_swap: (usize, usize), second_swap: (usize, usize), delta: f32) -> Self {
-        Self::CategoryTwo {
-            first_swap,
-            second_swap,
-            delta,
-        }
-    }
-    fn category_three(
-        first_swap: (usize, usize),
-        second_swap: (usize, usize),
-        third_swap: (usize, usize),
-        delta: f32,
-    ) -> Self {
-        Self::CategoryThree {
-            first_swap,
-            second_swap,
-            third_swap,
-            delta,
-        }
-    }
-}
+use crate::{edge::Edge, tsp_ext::three_opt::ThreeOpt};
 
 pub struct TSP<E: Edge + Clone> {
     nodes: Vec<E>,
@@ -122,32 +58,6 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         }
     }
 
-    fn three_opt_swap_edges(&mut self, case: &ThreeOpt) {
-        match case {
-            ThreeOpt::CategoryOne { i, j, delta } => {
-                self.swap_edges(*i, *j);
-            }
-            ThreeOpt::CategoryTwo {
-                first_swap,
-                second_swap,
-                delta,
-            } => {
-                self.swap_edges(first_swap.0, first_swap.1);
-                self.swap_edges(second_swap.0, second_swap.1);
-            }
-            ThreeOpt::CategoryThree {
-                first_swap,
-                second_swap,
-                third_swap,
-                delta,
-            } => {
-                self.swap_edges(first_swap.0, first_swap.1);
-                self.swap_edges(second_swap.0, second_swap.1);
-                self.swap_edges(third_swap.0, third_swap.1);
-            }
-        }
-    }
-
     fn dist(&self, index_1: usize, index_2: usize) -> f32 {
         let path = &self.path;
         path[index_1].weight(&path[index_2])
@@ -186,117 +96,13 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         self.path().clone()
     }
 
-    // Choose any three edges and reconnect them in all the ways there are to combine them that do not produce cycles.
     pub fn three_opt(&mut self) -> Vec<E> {
-        let n = self.path().len();
+        self.path = ThreeOpt::new(self.nodes.clone(), self.path.clone()).solve();
+        self.path.clone()
+    }
 
-        let mut cost = self.calculate_path_cost();
-
-        let mut found_improvement = true;
-        while found_improvement {
-            found_improvement = false;
-
-            'outer: for i in 0..(n - 1) {
-                let a = i;
-                let b = (i + 1) % n;
-                for j in (i + 2)..n {
-                    let c = j;
-                    let d = (j + 1) % n;
-
-                    for k in (j + 2)..n {
-                        let e = k;
-                        let f = (k + 1) % n;
-
-                        // Gain: Length of added edges - length of removed edges
-
-                        // Two-opt cases
-
-                        // fixed: a-b
-                        let delta_case_1 = ThreeOpt::category_one(
-                            c,
-                            e,
-                            -self.dist(c, d) - self.dist(e, f) + self.dist(c, e) + self.dist(d, f),
-                        );
-
-                        // fixed: c-d
-                        let delta_case_2 = ThreeOpt::category_one(
-                            a,
-                            e,
-                            -self.dist(a, b) - self.dist(e, f) + self.dist(a, e) + self.dist(b, f),
-                        );
-
-                        // fixed: e-f
-                        let delta_case_3 = ThreeOpt::category_one(
-                            a,
-                            c,
-                            -self.dist(a, b) - self.dist(c, d) + self.dist(a, c) + self.dist(b, d),
-                        );
-
-                        // Three-opt cases
-
-                        let common = -self.dist(a, b) - self.dist(c, d) - self.dist(e, f);
-
-                        let delta_case_4 = ThreeOpt::category_two(
-                            (a, d),
-                            (b, e),
-                            common + self.dist(a, d) + self.dist(e, b) + self.dist(f, c),
-                        );
-
-                        let delta_case_5 = ThreeOpt::category_two(
-                            (a, e),
-                            (c, e),
-                            common + self.dist(a, e) + self.dist(d, b) + self.dist(c, f),
-                        );
-
-                        let delta_case_6 = ThreeOpt::category_two(
-                            (a, c),
-                            (c, e),
-                            common + self.dist(a, c) + self.dist(b, e) + self.dist(d, f),
-                        );
-
-                        let delta_case_7 = ThreeOpt::category_three(
-                            (a, d),
-                            (b, e),
-                            (c, e),
-                            common + self.dist(a, d) + self.dist(e, c) + self.dist(b, f),
-                        );
-
-                        let cases = vec![
-                            delta_case_1,
-                            delta_case_2,
-                            delta_case_3,
-                            delta_case_4,
-                            delta_case_5,
-                            delta_case_6,
-                            delta_case_7,
-                        ];
-
-                        let mut most_gain: Option<ThreeOpt> = None;
-                        for case in cases {
-                            if case.delta() < &-0.001 {
-                                if let Some(current_best) = &most_gain {
-                                    if case.delta() < current_best.delta() {
-                                        most_gain = Some(case)
-                                    }
-                                } else {
-                                    most_gain = Some(case)
-                                }
-                            }
-                        }
-
-                        if let Some(best) = &most_gain {
-                            found_improvement = true;
-
-                            self.three_opt_swap_edges(best);
-                            cost += best.delta();
-
-                            break 'outer;
-                        }
-                    }
-                }
-            }
-        }
-
+    pub fn three_opt_sm(&mut self) -> Vec<E> {
+        self.path = ThreeOpt::new(self.nodes.clone(), self.path.clone()).solve_sm();
         self.path.clone()
     }
 
@@ -538,6 +344,39 @@ mod tests {
         assert!(cost < prev_cost);
 
         println!("Cost: {cost}");
+        assert!(cost.floor() < 8559.0);
+        Ok(())
+    }
+
+    #[test]
+    fn three_opt_sm_wiki() -> eyre::Result<()> {
+        let WikiPaths { path_1, path_2 } = wiki_nodes()?;
+        let mut tsp = TSP::new(path_2);
+        tsp.nn();
+
+        let prev_cost = tsp.calculate_path_cost();
+        // assert_eq!(prev_cost.floor(), 55723.0);
+
+        let _ = tsp.three_opt_sm();
+
+        let cost = tsp.calculate_path_cost();
+
+        println!("Cost: {cost}");
+
+        assert!(cost < prev_cost);
+        assert!(cost.floor() < 8559.0);
+
+        let mut tsp2 = TSP::new(path_1);
+        tsp2.nn();
+
+        let prev_cost = tsp2.calculate_path_cost();
+
+        let _ = tsp2.three_opt_sm();
+
+        let cost = tsp2.calculate_path_cost();
+        println!("Cost: {cost}");
+
+        assert!(cost < prev_cost);
         assert!(cost.floor() < 8559.0);
         Ok(())
     }
