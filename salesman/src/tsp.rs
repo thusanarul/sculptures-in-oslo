@@ -101,31 +101,31 @@ impl<E: Edge + Clone + Debug> TSP<E> {
             }
         }
 
-        return m;
+        m
     }
 
     // Replaces edges path[i]->path[i+1] and path[j]->path[j+1]
     // with path[i]->path[j] and path[i+1]->path[j+1]
     fn swap_edges(&mut self, i: usize, j: usize) {
-        let mut i = i.clone();
-        let mut j = j.clone();
+        let mut i = i;
+        let mut j = j;
 
-        i = i + 1;
+        i += 1;
 
         while i < j {
             let tmp = self.path[i].clone();
             self.path[i] = self.path[j].clone();
             self.path[j] = tmp;
 
-            i = i + 1;
-            j = j - 1;
+            i += 1;
+            j -= 1;
         }
     }
 
     fn three_opt_swap_edges(&mut self, case: &ThreeOpt) {
         match case {
             ThreeOpt::CategoryOne { i, j, delta } => {
-                self.swap_edges(i.clone(), j.clone());
+                self.swap_edges(*i, *j);
             }
             ThreeOpt::CategoryTwo {
                 first_swap,
@@ -176,7 +176,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
 
                     if length_delta < -0.001 {
                         self.swap_edges(a, c);
-                        cost = cost + length_delta;
+                        cost += length_delta;
                         found_improvement = true;
                     }
                 }
@@ -288,7 +288,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
                             found_improvement = true;
 
                             self.three_opt_swap_edges(best);
-                            cost = cost + best.delta();
+                            cost += best.delta();
 
                             break 'outer;
                         }
@@ -311,7 +311,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
         let mut current_node = initial.clone();
         path.push(initial);
 
-        while nodes_to_visit.len() != 0 {
+        while !nodes_to_visit.is_empty() {
             let mut current_shortest = f32::MAX;
             let mut current_index: usize = usize::MIN;
 
@@ -333,7 +333,7 @@ impl<E: Edge + Clone + Debug> TSP<E> {
 
         self.path = path.clone();
 
-        return path;
+        path
     }
 
     pub fn calculate_path_cost(&self) -> f32 {
@@ -343,10 +343,10 @@ impl<E: Edge + Clone + Debug> TSP<E> {
 
         for i in 0..n - 1 {
             let dist = self.dist(i, i + 1);
-            cost = cost + dist;
+            cost += dist;
         }
 
-        return cost;
+        cost
     }
 }
 
@@ -418,8 +418,8 @@ mod tests {
             .filter_map(|(index, line)| {
                 let mut line = line.splitn(2, ",");
 
-                let x = line.next().and_then(|v| Some(v.parse::<f32>().ok()?))?;
-                let y = line.next().and_then(|v| Some(v.parse::<f32>().ok()?))?;
+                let x = line.next().and_then(|v| v.parse::<f32>().ok())?;
+                let y = line.next().and_then(|v| v.parse::<f32>().ok())?;
 
                 Some(Point::new(x, y, index as i32))
             })
@@ -432,8 +432,8 @@ mod tests {
             .filter_map(|(index, line)| {
                 let mut line = line.splitn(2, ",");
 
-                let x = line.next().and_then(|v| Some(v.parse::<f32>().ok()?))?;
-                let y = line.next().and_then(|v| Some(v.parse::<f32>().ok()?))?;
+                let x = line.next().and_then(|v| v.parse::<f32>().ok())?;
+                let y = line.next().and_then(|v| v.parse::<f32>().ok())?;
 
                 Some(Point::new(x, y, index as i32))
             })

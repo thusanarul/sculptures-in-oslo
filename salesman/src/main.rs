@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, env, ops::Deref};
 
 use edge::NodeLatLon;
-use latlon::{LatLon, GRONLAND_TBANE, KAMPEN};
+use latlon::{LatLon, GRONLAND_TBANE};
 use mst::MST;
 use statue::{MaybeStatue, Statue};
 use tsp::TSP;
@@ -36,7 +36,7 @@ fn main() -> eyre::Result<()> {
             - b_pos.calculate_distance_to(start.latlon());
 
         if diff == 0.0 {
-            return Ordering::Equal;
+            Ordering::Equal
         } else if diff < 0.0 {
             return Ordering::Less;
         } else {

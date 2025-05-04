@@ -6,13 +6,13 @@ const R: f32 = 6371e3; // in metres
 
 pub const GRONLAND_TBANE: LazyLock<StartingPoint> = LazyLock::new(|| {
     StartingPoint::new(
-        LatLon::new(59.912733, 10.761390),
+        LatLon::new(59.912_73, 10.761_39),
         "Grønland T-bane".to_string(),
     )
 });
 
 pub const KAMPEN: LazyLock<StartingPoint> =
-    LazyLock::new(|| StartingPoint::new(LatLon::new(59.9133408, 10.7745239), "Kampen".to_string()));
+    LazyLock::new(|| StartingPoint::new(LatLon::new(59.913_34, 10.774_524), "Kampen".to_string()));
 
 #[derive(Debug, Clone)]
 pub struct StartingPoint {
@@ -76,8 +76,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let point_1 = LatLon::new(59.8759717, 10.8297305);
-        let point_2 = LatLon::new(59.9326106, 10.7344451);
+        let point_1 = LatLon::new(59.875_973, 10.829_73);
+        let point_2 = LatLon::new(59.932_61, 10.734_446);
 
         let distance = point_1.calculate_distance_to(&point_2);
 

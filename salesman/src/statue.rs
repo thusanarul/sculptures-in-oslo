@@ -57,14 +57,14 @@ impl Edge for Statue {
     }
 }
 
-impl Into<LatLon> for Statue {
-    fn into(self) -> LatLon {
-        LatLon::new(self.lat, self.lon)
+impl From<Statue> for LatLon {
+    fn from(val: Statue) -> Self {
+        LatLon::new(val.lat, val.lon)
     }
 }
 
-impl Into<LatLon> for &Statue {
-    fn into(self) -> LatLon {
-        LatLon::new(self.lat, self.lon)
+impl From<&Statue> for LatLon {
+    fn from(val: &Statue) -> Self {
+        LatLon::new(val.lat, val.lon)
     }
 }
