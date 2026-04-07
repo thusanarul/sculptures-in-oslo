@@ -312,7 +312,7 @@ where
 
                         let best_case = self.get_best_case(a, b, c, d, e, f);
 
-                        println!("Best case: {:#?}", best_case);
+                        // println!("Best case: {:#?}", best_case);
 
                         let delta = best_case.delta();
                         // NOTE: For simulated annealing
@@ -333,10 +333,10 @@ where
                             cost += best_case.delta();
                             break 'outer;
                         } else if rand <= prob {
-                            println!(
-                                "Chose worse solution: {} {} {} {}",
-                                delta, temperature, rand, prob
-                            );
+                            // println!(
+                            //     "Chose worse solution: {} {} {} {}",
+                            //     delta, temperature, rand, prob
+                            // );
                             self.swap_edges_by_case(&best_case);
                             cost += best_case.delta();
                             break 'outer;

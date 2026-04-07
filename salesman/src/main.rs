@@ -65,28 +65,28 @@ fn main() -> eyre::Result<()> {
 
     // println!("Path:\n{:#?}", tsp.path());
     let tsp_cost = tsp.calculate_path_cost();
-    println!("Total distance three-opt: {}", tsp_cost);
+    // println!("Total distance three-opt: {}", tsp_cost);
 
-    println!("MST lower bound: {}", mst_lower_bound);
-    println!(
-        "Calculated distance to lower bound ratio: {}",
-        tsp_cost / mst_lower_bound
-    );
+    // println!("MST lower bound: {}", mst_lower_bound);
+    // println!(
+    //     "Calculated distance to lower bound ratio: {}",
+    //     tsp_cost / mst_lower_bound
+    // );
 
     let mut tsp = TSP::new(path);
 
     tsp.nn();
     tsp.three_opt_sm();
 
-    // println!("Path:\n{:#?}", tsp.path());
+    println!("Path:\n{:#?}", tsp.path());
     let tsp_cost = tsp.calculate_path_cost();
     println!("Total distance sm: {}", tsp_cost);
 
-    println!("MST lower bound: {}", mst_lower_bound);
-    println!(
-        "Calculated distance to lower bound ratio: {}",
-        tsp_cost / mst_lower_bound
-    );
+    // println!("MST lower bound: {}", mst_lower_bound);
+    // println!(
+    //     "Calculated distance to lower bound ratio: {}",
+    //     tsp_cost / mst_lower_bound
+    // );
 
     Ok(())
 }
